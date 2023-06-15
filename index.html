@@ -1,0 +1,295 @@
+<!doctype html>
+<title>Monster-Lab</title>
+<link rel="stylesheet" href="style.css">
+<center>
+  <body>
+
+      <h1>LABORATORY FOR THE DAY</h1>
+      <div id="stage"></div>
+      <p id="output"></p>
+
+  </body>
+</center>
+
+<script>
+var gameTimer =
+{
+  time: 0,
+  interval: undefined,
+
+  start: function()
+  {
+    var self = this;
+    this.interval = setInterval(function(){self.tick();}, 1000);
+  },
+  tick: function()
+  {
+    this.time--;
+  },
+  stop: function()
+  {
+    clearInterval(this.interval);
+  },
+  reset: function()
+  {
+    this.time = 0;
+  }
+};
+
+
+
+var monster =
+{
+  
+  IMAGE: "monsterTileSheet.png",
+  SIZE: 128,
+  COLUMNS: 3,
+  
+  
+  numberOfFrames: 5,
+  currentFrame: 0,
+  
+ 
+  sourceX: 0,
+  sourceY: 0,
+  
+   
+  forward: true,
+  
+  HIDING: 0,
+  JUMPING: 1,
+  HIT: 2,
+  state: this.HIDING,
+  
+  
+  timeToReset: 9,
+  resetCounter: 0,
+  
+
+  waitTime: undefined,
+  
+ 
+  findWaitTime: function()
+  {
+    this.waitTime = Math.ceil(Math.random() * 60);  
+  },
+  
+ 
+  updateAnimation: function()
+  {  
+    this.sourceX 
+      = Math.floor(this.currentFrame % this.COLUMNS) * this.SIZE;
+    this.sourceY 
+      = Math.floor(this.currentFrame / this.COLUMNS) * this.SIZE;
+         
+    
+    if(this.state !== this.HIT)
+    {
+      if(this.waitTime > 0  || this.waitTime === undefined)
+      {
+        this.state = this.HIDING;
+      }
+      else
+      {
+        this.state = this.JUMPING;
+      }
+    }
+    
+    
+    switch(this.state)
+    {
+      case this.HIDING:
+        this.currentFrame = 0;
+        this.waitTime--;
+        break;
+        
+      case this.JUMPING:
+       
+        if(this.currentFrame === this.numberOfFrames)
+        {
+          this.forward = false;
+        }
+
+       
+        if(this.currentFrame === 0 && this.forward === false)
+        {
+          
+          this.forward = true;
+          this.findWaitTime();
+          this.state = this.HIDING;
+          break;
+        }
+
+       
+        if(this.forward)
+        {
+          this.currentFrame++;
+        }
+        else
+        {
+          this.currentFrame--;
+        }
+        break;
+        
+      case this.HIT:
+        
+        this.currentFrame = 6;
+        
+        this.resetCounter++;
+        
+        
+        if(this.resetCounter === this.timeToReset)
+        {
+          this.state = this.HIDING;
+          this.forward = true;
+          this.currentFrame = 0;
+          this.resetCounter = 0;
+          this.findWaitTime();
+        }
+        break;
+    }
+  }
+};
+
+var image = new Image();
+image.addEventListener("load", loadHandler, false);
+image.src = "../images/" + monster.IMAGE;
+
+
+var ROWS = 3;
+var COLUMNS = 5;
+var SIZE = monster.SIZE;
+var SPACE = 10;
+
+var monsterObjects = [];
+var monsterCanvases = [];
+var monsterDrawingSurfaces = [];
+
+var monstersHit = 0;
+
+var output = document.querySelector("#output");
+
+function loadHandler()
+{ 
+  
+  buildMap();
+  
+
+  gameTimer.time = 30;
+  gameTimer.start();
+  
+ 
+  updateAnimation();
+}
+
+function buildMap()
+{
+  for(var row = 0; row < ROWS; row++) 
+  { 
+    for(var column = 0; column < COLUMNS; column++) 
+    { 
+      
+      
+      var newMonsterObject = Object.create(monster);
+      newMonsterObject.findWaitTime();
+      monsterObjects.push(newMonsterObject);
+      
+     
+      var canvas = document.createElement("canvas");
+      canvas.setAttribute("width", SIZE);
+      canvas.setAttribute("height", SIZE);
+      stage.appendChild(canvas);
+      canvas.style.top = row * (SIZE + SPACE) + "px";
+      canvas.style.left = column * (SIZE + SPACE) + "px";
+      canvas.addEventListener("mousedown", mousedownHandler, false);
+      monsterCanvases.push(canvas);
+      
+     
+      var drawingSurface = canvas.getContext("2d");
+      monsterDrawingSurfaces.push(drawingSurface);
+    }
+  }
+}
+
+function updateAnimation()
+{ 
+
+  if(gameTimer.time > 0)
+  {
+    setTimeout(updateAnimation, 120);
+  }
+  
+  
+  for(var i = 0; i < monsterObjects.length; i++)
+  {
+    monsterObjects[i].updateAnimation();
+  }
+  
+ 
+  if(gameTimer.time === 0)
+  {
+    endGame();
+  }
+  
+ 
+  render();
+}
+
+function endGame()
+{
+ 
+  gameTimer.stop();
+  
+  
+  for(var i = 0; i < monsterCanvases.length; i++)
+  {
+    var canvas = monsterCanvases[i];
+    canvas.removeEventListener("mousedown", mousedownHandler, false);
+  }
+}
+function mousedownHandler(event)
+{
+  
+  var theCanvasThatWasClicked = event.target;
+  
+  for(var i = 0; i < monsterCanvases.length; i++)
+  {
+    if(monsterCanvases[i] === theCanvasThatWasClicked)
+    {
+      var monster = monsterObjects[i]
+      if(monster.state === monster.JUMPING)
+      {
+        monster.state = monster.HIT;
+        monstersHit++;      
+      }
+    }
+  }
+}
+
+function render()
+{
+  for(var i = 0; i < monsterObjects.length; i++)
+  { 
+    
+    var monster = monsterObjects[i];
+    var drawingSurface = monsterDrawingSurfaces[i];
+       
+    
+    drawingSurface.clearRect(0, 0, SIZE, SIZE);
+    
+    
+    drawingSurface.drawImage
+    (
+      image, 
+      monster.sourceX, monster.sourceY, SIZE, SIZE, 
+      0, 0, SIZE, SIZE
+    );
+  }
+  
+  
+  output.innerHTML 
+    = "Laboratory Monsters Smashed: " + monstersHit 
+    + ", Time Left: " + gameTimer.time;
+}
+
+</script>

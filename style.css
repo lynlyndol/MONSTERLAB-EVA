@@ -1,0 +1,42 @@
+*
+{
+  padding: 0px;
+  margin: 0px;
+}
+
+body {
+  background-image: url("../images/lead.jpeg");
+  background-attachment: fixed;
+  background-size: 100% 100%;
+  text-align: center;
+
+}
+h1{
+  background-color: skyblue;
+  width: 682px;
+}
+#stage 
+{
+ position: relative;
+  width: 682px;
+  height: 400px;
+
+}
+
+canvas
+{
+  display: block;
+  position: absolute;
+  width: 128px;
+  height: 128px;
+}
+
+p
+{
+  font-family: arial,sans-serif;
+  font-size: 20px;
+  padding: 20px;
+  
+  height: 50px;
+  width: 642px;
+}
